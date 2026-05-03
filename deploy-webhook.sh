@@ -5,12 +5,12 @@
 set -e
 
 # Configuration
-REPO_PATH="/var/www/wordpress"
+REPO_PATH="/workspaces/.github-workflows-deploy.yml"
 REPO_URL="https://github.com/komlantometi51/.github-workflows-deploy.yml.git"
 BRANCH="main"
 
 # Logs
-LOG_FILE="/var/log/wordpress-deploy.log"
+LOG_FILE="/tmp/wordpress-deploy.log"
 
 log() {
     echo "[$(date '%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"

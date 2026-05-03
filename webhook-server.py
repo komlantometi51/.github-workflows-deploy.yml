@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Serveur webhook pour auto-déploiement GitHub
-Lancez : python3 webhook-server.py
+Webhook server for automatic GitHub deployment
+Run: python3 webhook-server.py
 """
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -12,19 +12,19 @@ import logging
 
 # Configuration
 WEBHOOK_PORT = 8000
-WEBHOOK_SECRET = "votre_secret_github"  # À définir dans GitHub Settings
-DEPLOY_SCRIPT = "/path/to/deploy-webhook.sh"
+WEBHOOK_SECRET = "your_github_secret"  # Set in GitHub Settings
+DEPLOY_SCRIPT = "/workspaces/.github-workflows-deploy.yml/deploy-webhook.sh"
 
 # Logging
 logging.basicConfig(
-    filename="/var/log/webhook-deploy.log",
+    filename="/tmp/webhook-deploy.log",
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
 class WebhookHandler(BaseHTTPRequestHandler):
     def do_POST(self):
-        """Gérer les requêtes POST du webhook GitHub"""
+        """Handle POST requests from GitHub webhook"""
         
         content_length = int(self.headers.get('Content-Length', 0))
         body = self.rfile.read(content_length)
@@ -32,47 +32,47 @@ class WebhookHandler(BaseHTTPRequestHandler):
         try:
             payload = json.loads(body.decode('utf-8'))
             
-            # Vérifier le secret (optionnel)
+            # Check secret (optional)
             signature = self.headers.get('X-Hub-Signature-256', '')
             
-            logging.info(f"Webhook reçu - Branche: {payload.get('ref')}")
+            logging.info(f"Webhook received - Branch: {payload.get('ref')}")
             
-            # Vérifier qu'on est sur main
+            # Verify we are on main branch
             if payload.get('ref') != 'refs/heads/main':
                 self.send_response(200)
                 self.end_headers()
-                self.wfile.write(b"Branche ignorée")
+                self.wfile.write(b"Branch ignored")
                 return
             
-            # Exécuter le script de déploiement
-            logging.info("Démarrage du déploiement...")
+            # Execute deployment script
+            logging.info("Starting deployment...")
             result = subprocess.run(['/bin/bash', DEPLOY_SCRIPT], 
                                     capture_output=True, 
                                     text=True)
             
             if result.returncode == 0:
-                logging.info("Déploiement réussi")
+                logging.info("Deployment successful")
                 self.send_response(200)
                 self.end_headers()
-                self.wfile.write(b"Déploiement réussi")
+                self.wfile.write(b"Deployment successful")
             else:
-                logging.error(f"Erreur: {result.stderr}")
+                logging.error(f"Error: {result.stderr}")
                 self.send_response(500)
                 self.end_headers()
-                self.wfile.write(b"Erreur de déploiement")
+                self.wfile.write(b"Deployment error")
         
         except Exception as e:
-            logging.error(f"Erreur: {str(e)}")
+            logging.error(f"Error: {str(e)}")
             self.send_response(500)
             self.end_headers()
-            self.wfile.write(b"Erreur serveur")
+            self.wfile.write(b"Server error")
     
     def log_message(self, format, *args):
-        """Supprimer les logs par défaut"""
+        """Suppress default logs"""
         pass
 
 if __name__ == '__main__':
     server = HTTPServer(('0.0.0.0', WEBHOOK_PORT), WebhookHandler)
-    logging.info(f"Serveur webhook lancé sur le port {WEBHOOK_PORT}")
-    print(f"Serveur webhook actif sur http://0.0.0.0:{WEBHOOK_PORT}")
+    logging.info(f"Webhook server started on port {WEBHOOK_PORT}")
+    print(f"Webhook server active on http://0.0.0.0:{WEBHOOK_PORT}")
     server.serve_forever()
