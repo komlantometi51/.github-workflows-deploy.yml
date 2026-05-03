@@ -1,4 +1,4 @@
-name: Deploy WordPress Site
+name: Auto-Déploiement Git
 
 on:
   push:
@@ -7,11 +7,19 @@ on:
 
 jobs:
   deploy:
-    name: Deploy
+    name: Déployer depuis Git
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Deploy
-        uses: rtCamp/action-deploy-wordpress@v2
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      
+      - name: Déployer via Git
+        run: |
+          echo "Déploiement en cours..."
+          # Utiliser un webhook ou script SSH pour déployer
+          curl -X POST ${{ secrets.WEBHOOK_URL }} \
+            -H "Content-Type: application/json" \
+            -d "{\"ref\":\"${{ github.ref }}\",\"commit\":\"${{ github.sha }}\"}"
+        
+      - name: Notifications
+        if: always()
+        run: echo "Déploiement terminé - Commit: ${{ github.sha }}"
